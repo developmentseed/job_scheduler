@@ -141,8 +141,50 @@ class JobScheduler {
         $this->reserve($job);
       }
     }
-    elseif (function_exists($info['worker callback'])) {
-      $info['worker callback']($job);
+    else {
+      $this->execute($job, $info);
     }
+  }
+
+  /**
+   * Executes a job that is no
+   * 
+   * @param $job
+   *   A $job array as passed into set() or read from job_schedule table.
+   */
+  public function execute($job) {
+    if (function_exists($info['worker callback'])) {
+      // If the job is periodic, re-schedule it before calling the worker, just in case
+      if ($job['periodic']) {
+        $this->reschedule($job);
+      }
+      $info['worker callback']($job); 
+    }
+    else {
+      // @todo If worker doesn't exist anymore we should do something about it, remove?
+      $this->remove($job);
+    }    
+  }
+  
+  /**
+   * Re-schedule a job
+   */
+  public function reschedule($job) {
+    $info = $this->info();
+    $job['last'] = REQUEST_TIME;
+    $job['next'] = REQUEST_TIME + $job['period'];
+    drupal_write_record('job_schedule', $job, array('name', 'type', 'id'));
+  }
+  
+  /**
+   * Check whether a job exists in the queue
+   */
+  public function check($info) {
+    return db_select('job_schedule')
+      ->condition('name', $this->name)
+      ->condition('type', $job['type'])
+      ->condition('id', isset($job['id']) ? $job['id'] : 0)
+      ->execute()
+      ->fetchObject();    
   }
 }

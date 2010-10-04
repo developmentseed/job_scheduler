@@ -16,7 +16,7 @@
  * @return array
  *   Information for the schedule if $name, all the information if not
  */
-public function job_scheduler_info($name = NULL) {
+function job_scheduler_info($name = NULL) {
   $info = &drupal_static(__FUNCTION_);
   if (!$info) {
     $info = module_invoke_all('cron_job_scheduler_info');
@@ -71,4 +71,52 @@ function job_scheduler_cron() {
 
   // Leave a note on how much time we spent processing.
   watchdog('job_scheduler', 'Finished processing scheduled jobs (!time s, !total total, !failed failed).', array('!time' => format_interval(time() - $start), '!total' => $total, '!failed' => $failed));
+}
+
+/**
+ * Implementation of hook_modules_enabled().
+ */
+function job_scheduler_modules_enabled($modules) {
+  job_scheduler_rebuild();
+}
+
+/**
+ * Implementation of hook_modules_disabled().
+ */
+function job_scheduler_modules_disabled($modules) {
+  job_scheduler_rebuild();
+}
+
+/**
+ * Rebuild scheduled information after enable/disable modules
+ * 
+ * @todo What should we do about missing ones when disabling their module?
+ */
+function job_scheduler_rebuild() {
+  foreach (job_scheduler_info() as $name => $info) {
+    if (!empty($info['auto'])) {
+      $scheduler = JobScheduler::get($info['name']);
+      if (!$scheduler->check($info)) {
+        $scheduler->set($info);
+      }
+    }
+  }  
+}
+
+/**
+ * Implementation of hook_cron_queue_info().
+ * 
+ * Provide queue worker information for jobs marked as 'auto'
+ */
+function job_scheduler_cron_queue_info() {
+  $queue = array();
+  foreach (job_scheduler_info() as $name => $info) {
+    if (!empty($info['auto']) && !empty($info['queue name'])) {
+      $queue[$info['queue name']] = array(
+        'worker callback' => $info['worker callback'],
+        'time' => 60, // Some reasonable default as we don't know
+      );
+    }
+  }
+  return $queue;
 }
