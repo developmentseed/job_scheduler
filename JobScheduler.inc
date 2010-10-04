@@ -48,14 +48,8 @@ class JobScheduler {
    * @throws JobSchedulerException.
    */
   public function info() {
-    // Collect info for all schedules once.
-    static $info;
-    if (!$info) {
-      $info = module_invoke_all('cron_job_scheduler_info');
-      drupal_alter('cron_job_scheduler_info', $info);
-    }
-    if (isset($info[$this->name])) {
-      return $info[$this->name];
+    if ($info = job_scheduler_info($this->name)) {
+      return $info;
     }
     throw new JobSchedulerException('Could not find Job Scheduler cron information for '. check_plain($this->name));
   }

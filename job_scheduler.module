@@ -7,6 +7,30 @@
  */
 
 /**
+ * Collects and returns scheduler info.
+ *
+ * @see hook_cron_job_scheduler_info().
+ *
+ * @param $name
+ *   Name of the schedule
+ * @return array
+ *   Information for the schedule if $name, all the information if not
+ */
+public function job_scheduler_info($name = NULL) {
+  $info = &drupal_static(__FUNCTION_);
+  if (!$info) {
+    $info = module_invoke_all('cron_job_scheduler_info');
+    drupal_alter('cron_job_scheduler_info', $info);
+  }
+  if ($name) {
+    return isset($info[$name]) ? $info[$name] : NULL;
+  }
+  else {
+    return $info;
+  }
+}
+
+/**
  * Implementation of hook_cron().
  */
 function job_scheduler_cron() {
