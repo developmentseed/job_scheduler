@@ -1,0 +1,8 @@
+;$Id: job_scheduler.info,v 1.3 2010/09/16 22:16:06 alexb Exp $
+name = Job Scheduler
+description = Scheduler API
+files[] = job_scheduler.module
+files[] = job_scheduler.install
+files[] = JobScheduler.inc
+core = 7.x
+php = 5.2
