@@ -17,7 +17,7 @@
  *   Information for the schedule if $name, all the information if not
  */
 function job_scheduler_info($name = NULL) {
-  $info = &drupal_static(__FUNCTION_);
+  $info = &drupal_static(__FUNCTION__);
   if (!$info) {
     $info = module_invoke_all('cron_job_scheduler_info');
     drupal_alter('cron_job_scheduler_info', $info);

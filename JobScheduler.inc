@@ -179,7 +179,7 @@ class JobScheduler {
   public function reschedule($job) {
     $info = $this->info();
     $job['last'] = REQUEST_TIME;
-    if (isset($info['jobs'][$job['id']]['crontab']) {
+    if (isset($info['jobs'][$job['id']]['crontab'])) {
       $crontab = new JobSchedulerCronTab($info['jobs'][$job['id']]['crontab']);
       $job['next'] = $crontab->next_time(REQUEST_TIME);
     }
@@ -227,7 +227,7 @@ class JobSchedulerCronTab {
    */
   public function __construct($crontab) {
     $this->crontab = $crontab;
-    $this->cron = $this->crontab_parse($crontab);
+    $this->cron = $this->parse($crontab);
   }
 
   /**
@@ -241,7 +241,7 @@ class JobSchedulerCronTab {
     // Replace multiple spaces by single space
     $crontab = preg_replace('/(\s+)/', ' ', $crontab);
     // Expand into elements and parse all
-    $values = explode(' ', trim($crontab)));
+    $values = explode(' ', trim($crontab));
     $elements = array();
     while ($type = array_shift($keys) && $data = array_shift($values)) {
       $elements[$type] = self::parse_element($type, $data, TRUE);
@@ -263,7 +263,7 @@ class JobSchedulerCronTab {
    *   Starting time
    */
   public function next_time($start_time = NULL) {
-    $start_time = isset($start_time) ? $start_time, time();
+    $start_time = isset($start_time) ? $start_time : time();
     $start_date = getdate($start_time); // Get minutes, hours, mday, wday, mon, year
     if ($date = next_date($start_date)) {
       return mktime($date['hours'], $date['minutes'], 0, $date['month'], $date['day'], $date['year']);
@@ -299,7 +299,9 @@ class JobSchedulerCronTab {
    */
   function check_day($date) {
     foreach (array('wday', 'mday', 'month') as $key) {
-      if (!in_array($date[$key]), $this->cron[$key]) return FALSE;
+      if (!in_array($date[$key], $this->cron[$key])) {
+        return FALSE;
+      }
     }
     return TRUE;
   }
@@ -346,16 +348,16 @@ class JobSchedulerCronTab {
   protected static function parse_element($type, $string, $translate = FALSE) {
     $string = trim($string);
     if ($translate) {
-      $string = $this->translate_names($type, $string);
+      $string = self::translate_names($type, $string);
     }
     if ($string === '*') {
       // This means all possible values, return right away, no need to double check
-      return $this->possible_values($type);
+      return self::possible_values($type);
     }
     elseif (strpos('/', $string)) {
       // Multiple. Example */2, for weekday will expand into 2, 4, 6 
       list($values, $multiple) = explode('/', $string);
-      $values = $this->parse_element($values);
+      $values = self::parse_element($values);
       foreach ($values as $value) {
         if (!($value % $multiple)) {
           $range[] = $value;
@@ -366,7 +368,7 @@ class JobSchedulerCronTab {
       // Now process list parts, expand into items, process each and merge back
       $list = explode(',', $string);
       foreach ($list as $item) {
-        if ($values = $this->parse_element($type, $item)) {
+        if ($values = self::parse_element($type, $item)) {
           $range = array_merge($range, $values);
         }
       }
@@ -384,16 +386,13 @@ class JobSchedulerCronTab {
 
     // Return unique sorted values and double check they're within possible values
     if (!empty($range)) {
-    
-      
-      $range = array_intersect(array_unique($range), $this->possible_values($type));
+      $range = array_intersect(array_unique($range), self::possible_values($type));
       sort($range);
       // Sunday validation. We need cron values to match PHP values, thus week day 7 is not allowed, must be 0 
       if ($type == 'wday' && in_array(7, $range)) {
         array_pop($range);
         array_unshift($range, 0);
-      }       
-      
+      } 
       return $range;
     }
     else {
@@ -432,13 +431,13 @@ class JobSchedulerCronTab {
           // Tricky, tricky, we need sunday to be zero at the beginning of a range, but 7 at the end
           array('-sunday' => '-7', '-sun' => '-7', 'sunday-' => '0-', 'sun-' => '0-'),
           array_flip(array('sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday')),
-          array_flip(array('sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat')),
+          array_flip(array('sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'))
         );
         break;
       case 'mon':
         $replace = array_merge(
           array_flip(array('nomonth1', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december')),
-          array_flip(array('nomonth2', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct' 'nov', 'dec')),
+          array_flip(array('nomonth2', 'jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec')),
           array('sept' => 9)
         );
         break;
