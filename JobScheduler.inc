@@ -265,10 +265,10 @@ class JobSchedulerCronTab {
    * @param $start_time timestamp
    *   Starting time
    */
-  public function next_time($start_time = NULL) {
+  public function next_time($start_time = NULL, $limit = 366) {
     $start_time = isset($start_time) ? $start_time : time();
     $start_date = getdate($start_time); // Get minutes, hours, mday, wday, mon, year
-    if ($date = $this->next_date($start_date)) {
+    if ($date = $this->next_date($start_date, $limit)) {
       return mktime($date['hours'], $date['minutes'], 0, $date['mon'], $date['mday'], $date['year']);
     }
     else {
@@ -284,13 +284,13 @@ class JobSchedulerCronTab {
    * @param $date
    *   Date array with: 'mday', 'mon', 'year', 'hours', 'minutes'
    */
-  public function next_date($date) {
+  public function next_date($date, $limit = 366) {
     $date['seconds'] = 0;
     // It is possible that the current date doesn't match 
     if ($this->check_day($date) && ($nextdate = $this->next_hour($date))) {
       return $nextdate;
     }
-    elseif ($nextdate = $this->next_day($date)) {
+    elseif ($nextdate = $this->next_day($date, $limit)) {
       return $nextdate;
     }
     else {
@@ -316,9 +316,9 @@ class JobSchedulerCronTab {
    * Maybe it's possible that it's within the next years, maybe no day of a year matches all conditions.
    * However, to prevent infinite loops we restrict it to the next year.
    */
-  protected function next_day($date) {
+  protected function next_day($date, $limit = 366) {
     $i = 0; // Safety check, we love infinite loops...
-    while ($i++ < 367) {
+    while ($i++ <= $limit) {
       // This should fix values out of range, like month > 12, day > 31....
       // So we can trust we get the next valid day, can't we?
       $time = mktime(0, 0, 0, $date['mon'], $date['mday'] + 1, $date['year']);
