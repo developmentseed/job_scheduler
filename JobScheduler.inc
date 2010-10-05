@@ -222,8 +222,11 @@ class JobSchedulerCronTab {
   /**
    * Constructor
    * 
+   * About crontab strings, see all about possible formats
+   * http://linux.die.net/man/5/crontab
+   * 
    * @param $crontab string
-   *   Crontab text line
+   *   Crontab text line: minute hour day-of-month month day-of-week
    */
   public function __construct($crontab) {
     $this->crontab = $crontab;
@@ -257,7 +260,7 @@ class JobSchedulerCronTab {
   }
   
   /**
-   * Find the next occurrence as unix timestamp
+   * Find the next occurrence within the next year as unix timestamp
    * 
    * @param $start_time timestamp
    *   Starting time
@@ -265,8 +268,8 @@ class JobSchedulerCronTab {
   public function next_time($start_time = NULL) {
     $start_time = isset($start_time) ? $start_time : time();
     $start_date = getdate($start_time); // Get minutes, hours, mday, wday, mon, year
-    if ($date = next_date($start_date)) {
-      return mktime($date['hours'], $date['minutes'], 0, $date['month'], $date['day'], $date['year']);
+    if ($date = $this->next_date($start_date)) {
+      return mktime($date['hours'], $date['minutes'], 0, $date['mon'], $date['mday'], $date['year']);
     }
     else {
       return 0;
@@ -274,11 +277,12 @@ class JobSchedulerCronTab {
   }
 
   /**
-   * Find the next occurrence as a date array
+   * Find the next occurrence within the next year as a date array, 
    * 
-   * @see 
+   * @see getdate()
+   * 
    * @param $date
-   *   Date array as returned by
+   *   Date array with: 'mday', 'mon', 'year', 'hours', 'minutes'
    */
   public function next_date($date) {
     $date['seconds'] = 0;
@@ -298,7 +302,7 @@ class JobSchedulerCronTab {
    * Check whether date's day is a valid one
    */
   protected function check_day($date) {
-    foreach (array('wday', 'mday', 'month') as $key) {
+    foreach (array('wday', 'mday', 'mon') as $key) {
       if (!in_array($date[$key], $this->cron[$key])) {
         return FALSE;
       }
@@ -308,15 +312,18 @@ class JobSchedulerCronTab {
 
   /**
    * Find the next day from date that matches with cron parameters
+   * 
+   * Maybe it's possible that it's within the next years, maybe no day of a year matches all conditions.
+   * However, to prevent infinite loops we restrict it to the next year.
    */
   protected function next_day($date) {
     $i = 0; // Safety check, we love infinite loops...
     while ($i++ < 367) {
       // This should fix values out of range, like month > 12, day > 31....
       // So we can trust we get the next valid day, can't we?
-      $time = mktime(0, 0, 0, $date['month'], $date['day'] + 1, $date['year']);
+      $time = mktime(0, 0, 0, $date['mon'], $date['mday'] + 1, $date['year']);
       $date = getdate($time);
-      if (check_day($date)) {
+      if ($this->check_day($date)) {
         $date['hours'] = reset($this->cron['hours']);
         $date['minutes'] = reset($this->cron['minutes']);
         return $date;
@@ -329,10 +336,10 @@ class JobSchedulerCronTab {
   protected function next_hour($date) {
     $cron = $this->cron;
     while ($hour = array_shift($crom['hours'])) {
-      if ($date['hour'] <= $hour) {
+      if ($date['hours'] <= $hour) {
         while ($minute = array_shift($cron['minutes'])) {
           if ($date['minutes'] < $minute) {
-            $date['hour'] = $hour;
+            $date['hours'] = $hour;
             $date['minutes'] = $minute;
             return $date;
           }
