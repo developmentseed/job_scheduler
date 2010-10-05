@@ -44,6 +44,20 @@ Remove a job.
   );
   JobScheduler::get('example_unpublish')->remove($job);
 
+Declare automatic scheduler. Automatic schedulers will have their jobs scheduled when the module is enabled.
+Periodic jobs will be rescheduled automatically.
+
+  function example_cron_job_scheduler_info() {
+    $schedulers = array();
+    $schedulers['example_unpublish'] = array(
+      'worker callback' => 'example_unpublish_nodes',
+      'auto' => TRUE,
+      'jobs' => array(
+         array('type' => 'story', 'id' => 12, 'period' => 3600, 'periodic' => TRUE),
+      )
+    );
+    return $schedulers;
+  }
 
 Drupal Queue integration
 ========================
