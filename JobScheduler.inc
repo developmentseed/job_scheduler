@@ -243,7 +243,7 @@ class JobSchedulerCronTab {
     // Expand into elements and parse all
     $values = explode(' ', trim($crontab));
     $elements = array();
-    while ($type = array_shift($keys) && $data = array_shift($values)) {
+    while (($type = array_shift($keys)) && ($data = array_shift($values))) {
       $elements[$type] = self::parse_element($type, $data, TRUE);
     }
     // Return only if we have the right number of elements
@@ -297,7 +297,7 @@ class JobSchedulerCronTab {
   /**
    * Check whether date's day is a valid one
    */
-  function check_day($date) {
+  protected function check_day($date) {
     foreach (array('wday', 'mday', 'month') as $key) {
       if (!in_array($date[$key], $this->cron[$key])) {
         return FALSE;
@@ -309,7 +309,7 @@ class JobSchedulerCronTab {
   /**
    * Find the next day from date that matches with cron parameters
    */
-  function next_day($date) {
+  protected function next_day($date) {
     $i = 0; // Safety check, we love infinite loops...
     while ($i++ < 367) {
       // This should fix values out of range, like month > 12, day > 31....
@@ -326,7 +326,7 @@ class JobSchedulerCronTab {
   /**
    * Find the next available hour within the same day
    */
-  function next_hour($date) {
+  protected function next_hour($date) {
     $cron = $this->cron;
     while ($hour = array_shift($crom['hours'])) {
       if ($date['hour'] <= $hour) {
@@ -354,26 +354,27 @@ class JobSchedulerCronTab {
       // This means all possible values, return right away, no need to double check
       return self::possible_values($type);
     }
-    elseif (strpos('/', $string)) {
+    elseif (strpos($string, '/')) {
       // Multiple. Example */2, for weekday will expand into 2, 4, 6 
       list($values, $multiple) = explode('/', $string);
-      $values = self::parse_element($values);
+      $values = self::parse_element($type, $values);
       foreach ($values as $value) {
         if (!($value % $multiple)) {
           $range[] = $value;
         }
       }
     }
-    elseif (strpos(',', $string)) {
+    elseif (strpos($string, ',')) {
       // Now process list parts, expand into items, process each and merge back
       $list = explode(',', $string);
+      $range = array();
       foreach ($list as $item) {
         if ($values = self::parse_element($type, $item)) {
           $range = array_merge($range, $values);
         }
       }
     }
-    elseif (strpos('-', $string)) {
+    elseif (strpos($string, '-')) {
       // This defines a range. Example 1-3, will expand into 1,2,3
       list($start, $end) = explode('-', $string);
       // Double check the range is within possible values
