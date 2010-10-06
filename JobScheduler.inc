@@ -230,7 +230,7 @@ class JobSchedulerCronTab {
    */
   public function __construct($crontab) {
     $this->crontab = $crontab;
-    $this->cron = $this->parse($crontab);
+    $this->cron = is_array($crontab) ? $this->values($crontab) : $this->parse($crontab);
   }
 
   /**
@@ -245,18 +245,26 @@ class JobSchedulerCronTab {
     $crontab = preg_replace('/(\s+)/', ' ', $crontab);
     // Expand into elements and parse all
     $values = explode(' ', trim($crontab));
-    $elements = array();
-    while (($type = array_shift($keys)) && ($data = array_shift($values))) {
-      $elements[$type] = self::parse_element($type, $data, TRUE);
+    return self::values($values);
+  }
+
+  /**
+   * Parse array of values, check whether this is valid
+   */
+  public static function values($array) {
+    if (count($array) == 5) {
+      $values = array_combine(array('minutes', 'hours', 'mday', 'mon', 'wday'), array_map('trim', $array));
+      $elements = array();
+      foreach($values as $type => $string) {
+        $elements[$type] = self::parse_element($type, $string, TRUE);
+      }
+      // Return only if we have the right number of elements
+      // Dangerous means works running every second or things like that.
+      if (count(array_filter($elements)) == 5) {
+        return $elements;
+      }
     }
-    // Return only if we have the right number of elements
-    // Dangerous means works running every second or things like that.
-    if (count(array_filter($elements)) == 5) {
-      return $elements;
-    }
-    else {
-      return NULL;
-    }
+    return NULL;
   }
   
   /**
@@ -335,7 +343,7 @@ class JobSchedulerCronTab {
    */
   protected function next_hour($date) {
     $cron = $this->cron;
-    while ($hour = array_shift($crom['hours'])) {
+    while ($hour = array_shift($cron['hours'])) {
       if ($date['hours'] <= $hour) {
         while ($minute = array_shift($cron['minutes'])) {
           if ($date['minutes'] < $minute) {
