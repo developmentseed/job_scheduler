@@ -192,8 +192,9 @@ class JobScheduler {
   /**
    * Check whether a job exists in the queue
    */
-  public function check($info) {
+  public function check($job) {
     return db_select('job_schedule')
+      ->fields('job_schedule')
       ->condition('name', $this->name)
       ->condition('type', $job['type'])
       ->condition('id', isset($job['id']) ? $job['id'] : 0)

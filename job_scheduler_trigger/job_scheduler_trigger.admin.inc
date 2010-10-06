@@ -146,6 +146,7 @@ function job_scheduler_trigger_edit_form_submit($form, &$form_state) {
   }
   // Synchronize triggers, actions, scheduled jobs, etc..
   actions_synchronize();
+  job_scheduler_rebuild_all();
 }
 
 /**

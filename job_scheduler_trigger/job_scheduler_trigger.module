@@ -53,10 +53,10 @@ function job_scheduler_trigger_trigger_info() {
 /**
  * Implementation of hook_job_scheduler_info()
  */
-function job_scheduler_trigger_job_scheduler_info() {
+function job_scheduler_trigger_cron_job_scheduler_info() {
   foreach (job_scheduler_trigger_list() as $trigger) {
-    if ($trigger->enabled) {
-      $jobs[$trigger->trid] = array('id' => $trigger->trid, 'type' => $trigger->hook, 'crontab' => $trigger->crontab);
+    if ($trigger->status) {
+      $jobs[$trigger->trid] = array('id' => $trigger->trid, 'type' => $trigger->hook, 'crontab' => $trigger->crontab, 'periodic' => TRUE);
     }
   }
   if (!empty($jobs)) {
