@@ -62,6 +62,8 @@ function job_scheduler_cron() {
     catch (Exception $e) {
       watchdog('job_scheduler', $e->getMessage(), array(), WATCHDOG_ERROR);
       $failed++;
+      // Drop jobs that have caused exceptions
+      JobScheduler::get($job['name'])->remove($job);
     }
     $total++;
     if (time() > ($start + 30)) {
@@ -101,7 +103,8 @@ function job_scheduler_rebuild_all() {
 /**
  * Rebuild a single scheduler
  */
-function job_scheduler_rebuild_scheduler($name, $info) {
+function job_scheduler_rebuild_scheduler($name, $info = NULL) {
+  $info = $info ? $info : job_scheduler_info($name);
   if (!empty($info['auto'])) {
     $scheduler = JobScheduler::get($name);
     // An 'auto' scheduler may define multiple jobs. For each of them, we need to check whether
@@ -124,10 +127,27 @@ function job_scheduler_cron_queue_info() {
   foreach (job_scheduler_info() as $name => $info) {
     if (!empty($info['auto']) && !empty($info['queue name'])) {
       $queue[$info['queue name']] = array(
-        'worker callback' => $info['worker callback'],
+        'worker callback' => 'job_scheduler_cron_queue_worker',
         'time' => 60, // Some reasonable default as we don't know
       );
     }
   }
   return $queue;
+}
+
+/**
+ * Execute job worker from queue
+ * 
+ * Providing our own worker has the advantage that we can reschedule the job or take care of cleanup
+ * Note that as we run the execute() action, the job won't be queued again this time.
+ */
+function job_scheduler_cron_queue_worker($job) {
+  try {
+    JobScheduler::get($job['name'])->execute($job);
+  }
+  catch (Exception $e) {
+    watchdog('job_scheduler', $e->getMessage(), array(), WATCHDOG_ERROR);
+    // Drop jobs that have caused exceptions
+    JobScheduler::get($job['name'])->remove($job);
+  }
 }

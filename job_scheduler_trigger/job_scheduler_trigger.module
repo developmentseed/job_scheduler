@@ -83,20 +83,22 @@ function job_scheduler_trigger_list() {
  * Fire up a scheduled trigger
  */
 function job_scheduler_trigger_worker($job) {
+  watchdog('job_scheduler_trigger', 'Job !object', array('!object' => print_r($object, TRUE)));
   // Mark last time triggered for the records
   db_update('job_scheduler_trigger')
     ->fields(array('last' => REQUEST_TIME))
     ->condition('trid', $job['id'])
     ->execute();
-  $aids = trigger_get_assigned_actions($job['type']);
-  $context = array(
-    'group' => 'scheduler',
-    'hook' => $job['type'],
-    'job' => $job,
-  );
-  // Scheduler's object is the job from job_scheduler
-  $object = (object)$job;
-  actions_do(array_keys($aids), $object, $context);  
+  if ($aids = trigger_get_assigned_actions($job['type'])) {
+    $context = array(
+      'group' => 'scheduler',
+      'hook' => $job['type'],
+      'job' => $job,
+    );
+    // Scheduler's object is the job from job_scheduler
+    $object = (object)$job;
+    actions_do(array_keys($aids), $object, $context);
+  }  
 }
 
 /**

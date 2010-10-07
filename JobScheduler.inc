@@ -153,17 +153,22 @@ class JobScheduler {
   }
 
   /**
-   * Executes a job that is no
+   * Executes a job that
    * 
    * @param $job
    *   A $job array as passed into set() or read from job_schedule table.
+   *   
+   * @throws Exception
+   *   Exceptions thrown by code called by this method are passed on.
    */
   public function execute($job) {
+    $info = $this->info();
+    // If the job is periodic, re-schedule it before calling the worker, just in case
+    if ($job['periodic']) {
+      $job['last'] = REQUEST_TIME;
+      $this->reschedule($job);
+    }
     if (function_exists($info['worker callback'])) {
-      // If the job is periodic, re-schedule it before calling the worker, just in case
-      if ($job['periodic']) {
-        $this->reschedule($job);
-      }
       $info['worker callback']($job); 
     }
     else {
@@ -174,32 +179,50 @@ class JobScheduler {
   }
   
   /**
-   * Re-schedule a job
+   * Re-schedule a job if intended to run again
+   * 
+   * (If cannot determine the next time, drop the job)
    */
   public function reschedule($job) {
-    $info = $this->info();
-    $job['last'] = REQUEST_TIME;
-    if (isset($info['jobs'][$job['id']]['crontab'])) {
-      $crontab = new JobSchedulerCronTab($info['jobs'][$job['id']]['crontab']);
-      $job['next'] = $crontab->next_time(REQUEST_TIME);
+    $job['scheduled'] = 0;
+    if (!empty($job['crontab'])) {
+      $crontab = new JobSchedulerCronTab($job['crontab']);
+      $job['next'] = $crontab->next_time($job['last']);
     }
     else {
-      $job['next'] = REQUEST_TIME + $job['period'];
+      $job['next'] = $job['last'] + $job['period'];
     }
-    drupal_write_record('job_schedule', $job, array('name', 'type', 'id'));
+    
+    if ($job['next']) {
+      drupal_write_record('job_schedule', $job, array('item_id'));
+    }
+    else {
+      // If no next time, it may mean it wont run again the next year (crontab)
+      $this->remove($job);
+    }
   }
   
   /**
-   * Check whether a job exists in the queue
+   * Check whether a job exists in the queue and update its parameters if so
    */
   public function check($job) {
-    return db_select('job_schedule')
+    $job += array('id' => 0, 'period' => 0, 'crontab' => '');
+    $existing = db_select('job_schedule')
       ->fields('job_schedule')
       ->condition('name', $this->name)
       ->condition('type', $job['type'])
-      ->condition('id', isset($job['id']) ? $job['id'] : 0)
+      ->condition('id', $job['id'])
       ->execute()
-      ->fetchObject();    
+      ->fetchAssoc();
+    // If existing, and changed period or crontab, we need to reschedule the job
+    if ($existing) {
+      if ($job['period'] != $existing['period'] || $job['crontab'] != $existing['crontab']) {
+        $existing['period'] = $job['period'];
+        $existing['crontab'] = $job['crontab'];
+        $this->reschedule($existing);
+      }
+      return $existing;
+    }  
   }
 }
 
@@ -344,9 +367,11 @@ class JobSchedulerCronTab {
    */
   protected function next_hour($date) {
     $cron = $this->cron;
-    while ($hour = array_shift($cron['hours'])) {
+    while ($cron['hours']) {
+      $hour = array_shift($cron['hours']);
       if ($date['hours'] <= $hour) {
-        while ($minute = array_shift($cron['minutes'])) {
+        while ($cron['minutes']) {
+          $minute = array_shift($cron['minutes']);
           if ($date['minutes'] < $minute) {
             $date['hours'] = $hour;
             $date['minutes'] = $minute;
