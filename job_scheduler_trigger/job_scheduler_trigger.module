@@ -7,6 +7,23 @@
  */
 
 /**
+ * Implements hook_help().
+ */
+function job_scheduler_trigger_help($path, $arg) {
+  switch ($path) {
+    case 'admin/structure/trigger/job_scheduler':
+      // The first line is the very same text trigger module provides. Do not edit.
+      $output = '<p>' . t('Triggers are events on your site, such as new content being added or a user logging in. The Trigger module associates these triggers with actions (functional tasks), such as unpublishing content containing certain keywords or e-mailing an administrator. The <a href="@url">Actions settings page</a> contains a list of existing actions and provides the ability to create and configure advanced actions (actions requiring configuration, such as an e-mail address or a list of banned words).', array('@url' => url('admin/config/system/actions'))) . '</p>';
+      $output .= '<p>' . t('Below you can assign actions to run on a periodic basis. To create more triggers of this type use the <a href="@url">Job Scheduler configuration</a> page.', array('@url' => url('admin/config/system/job_scheduler'))) . '</p>';
+      return $output;
+    case 'admin/config/system/job_scheduler':
+      $output = '<p>' . t('You can create any number of jobs that are triggered depending on a crontab.') . '</p>';
+      $output .= '<p>' . t('To set actions for these triggers, go to the <a href="@url">Job Scheduler Triggers</a> page.', array('@url' => url('admin/structure/trigger/job_scheduler'))) . '</p>';
+      return $output;
+  }
+}
+
+/**
  * Implementation of hook_menu()
  */
 function job_scheduler_trigger_menu() {
@@ -83,7 +100,6 @@ function job_scheduler_trigger_list() {
  * Fire up a scheduled trigger
  */
 function job_scheduler_trigger_worker($job) {
-  watchdog('job_scheduler_trigger', 'Job !object', array('!object' => print_r($object, TRUE)));
   // Mark last time triggered for the records
   db_update('job_scheduler_trigger')
     ->fields(array('last' => REQUEST_TIME))
@@ -98,7 +114,7 @@ function job_scheduler_trigger_worker($job) {
     // Scheduler's object is the job from job_scheduler
     $object = (object)$job;
     actions_do(array_keys($aids), $object, $context);
-  }  
+  }
 }
 
 /**

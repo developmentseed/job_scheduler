@@ -142,13 +142,13 @@ class JobScheduler {
     if (!$job['periodic']) {
       $this->remove($job);
     }
-    if ($info['queue name']) {
+    if (!empty($info['queue name'])) {
       if (DrupalQueue::get($info['queue name'])->createItem($job)) {
         $this->reserve($job);
       }
     }
     else {
-      $this->execute($job, $info);
+      $this->execute($job);
     }
   }
 
@@ -169,7 +169,7 @@ class JobScheduler {
       $this->reschedule($job);
     }
     if (function_exists($info['worker callback'])) {
-      $info['worker callback']($job); 
+      call_user_func($info['worker callback'], $job); 
     }
     else {
       // @todo If worker doesn't exist anymore we should do something about it, remove and throw exception?

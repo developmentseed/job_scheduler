@@ -104,7 +104,7 @@ function job_scheduler_schema() {
         'description' => 'Timestamp when a job was scheduled. 0 if a job is currently not scheduled.',
       ),
     ),
-    'primary_key' => array('item_id'),
+    'primary key' => array('item_id'),
     'indexes' => array(
       'name_type_id' => array('name', 'type', 'id'),
       'name_type' => array('name', 'type'),
