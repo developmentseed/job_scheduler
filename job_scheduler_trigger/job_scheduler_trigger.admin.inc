@@ -16,7 +16,7 @@ function job_scheduler_trigger_admin_overview() {
     'next' => t('Next'),
     'operations' => t('Operations'),
   );
-  
+
   $options = array();
   foreach (job_scheduler_trigger_list() as $trigger) {
     $next_time = job_scheduler_trigger_next_time($trigger->crontab);
@@ -40,14 +40,14 @@ function job_scheduler_trigger_admin_overview() {
       ),
     );
   }
-  
+
   $form['triggers'] = array(
     '#theme' => 'table',
     '#header' => $header,
     '#rows' => $options,
     '#empty' => t('No triggers created yet.'),
   );
-  
+
   $form['add']['#markup'] = l(t('Add a new trigger'), $base_path . '/add', array('query' => $destination));
 
   return $form;
@@ -113,7 +113,7 @@ function job_scheduler_trigger_edit_form_validate($form, &$form_state) {
   $trigger = $form_state['values']['trigger'];
   if ($trigger['crontab']) {
     if (!JobSchedulerCronTab::parse($trigger['crontab'])) {
-      form_set_error('trigger][crontab', t('Invalid cron parameters.')); 
+      form_set_error('trigger][crontab', t('Invalid cron parameters.'));
     }
   }
 }
@@ -134,7 +134,7 @@ function job_scheduler_trigger_edit_form_submit($form, &$form_state) {
     }
     else {
       drupal_write_record('job_scheduler_trigger', $trigger, 'trid');
-      drupal_set_message(t('The trigger has been updated.')); 
+      drupal_set_message(t('The trigger has been updated.'));
     }
   }
   elseif ($op == t('Delete')) {
