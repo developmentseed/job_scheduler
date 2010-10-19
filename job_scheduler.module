@@ -34,6 +34,15 @@ function job_scheduler_info($name = NULL) {
  * Implementation of hook_cron().
  */
 function job_scheduler_cron() {
+  // Reschedule all jobs if requested.
+  if (variable_get('job_scheduler_rebuild_all', FALSE)) {
+    foreach (job_scheduler_info() as $name => $info) {
+      job_scheduler_rebuild_scheduler($name, $info);
+    }
+    variable_set('job_scheduler_rebuild_all', FALSE);
+    return;
+  }
+
   // Reschedule stuck periodic jobs after one hour.
   db_update('job_schedule')
     ->fields(array(
@@ -95,9 +104,7 @@ function job_scheduler_modules_disabled($modules) {
  * @todo What should we do about missing ones when disabling their module?
  */
 function job_scheduler_rebuild_all() {
-  foreach (job_scheduler_info() as $name => $info) {
-    job_scheduler_rebuild_scheduler($name, $info);
-  }
+  variable_set('job_scheduler_rebuild_all', TRUE);
 }
 
 /**
