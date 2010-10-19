@@ -91,13 +91,13 @@ function job_scheduler_modules_disabled($modules) {
 
 /**
  * Rebuild scheduled information after enable/disable modules
- * 
+ *
  * @todo What should we do about missing ones when disabling their module?
  */
 function job_scheduler_rebuild_all() {
   foreach (job_scheduler_info() as $name => $info) {
     job_scheduler_rebuild_scheduler($name, $info);
-  }  
+  }
 }
 
 /**
@@ -114,12 +114,12 @@ function job_scheduler_rebuild_scheduler($name, $info = NULL) {
         $scheduler->set($job);
       }
     }
-  }  
+  }
 }
 
 /**
  * Implementation of hook_cron_queue_info().
- * 
+ *
  * Provide queue worker information for jobs marked as 'auto'
  */
 function job_scheduler_cron_queue_info() {
@@ -137,7 +137,7 @@ function job_scheduler_cron_queue_info() {
 
 /**
  * Execute job worker from queue
- * 
+ *
  * Providing our own worker has the advantage that we can reschedule the job or take care of cleanup
  * Note that as we run the execute() action, the job won't be queued again this time.
  */
