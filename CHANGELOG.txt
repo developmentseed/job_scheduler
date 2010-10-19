@@ -1,5 +1,12 @@
 $Id: CHANGELOG.txt,v 1.8.2.1 2010/09/30 00:31:00 alexb Exp $
 
+Job Scheduler 7.x xxxxxxxxxxxxxxxxxxxxxxx
+-----------------------------------------
+
+- Jose Reyero: Auto schedule jobs, reschedule jobs.
+- Jose Reyero: Provide crontab style scheduling.
+- Jose Reyero: Provide triggers.
+
 Job Scheduler 7.x 2.0 Alpha 1, 2010-09-29
 -----------------------------------------
 
