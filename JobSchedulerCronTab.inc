@@ -13,7 +13,7 @@
  *   // Run 23 minutes after midn, 2am, 4am ..., everyday
  *   $crontab = new JobSchedulerCronTab('23 0-23/2 * * *');
  *   // When this needs to run next, from current time?
- *   $next_time = $crontab->next_time(time());
+ *   $next_time = $crontab->nextTime(time());
  *
  * I hate Sundays.
  */
@@ -60,7 +60,7 @@ class JobSchedulerCronTab {
       $values = array_combine(array('minutes', 'hours', 'mday', 'mon', 'wday'), array_map('trim', $array));
       $elements = array();
       foreach($values as $type => $string) {
-        $elements[$type] = self::parse_element($type, $string, TRUE);
+        $elements[$type] = self::parseElement($type, $string, TRUE);
       }
       // Return only if we have the right number of elements
       // Dangerous means works running every second or things like that.
@@ -77,10 +77,10 @@ class JobSchedulerCronTab {
    * @param $start_time timestamp
    *   Starting time
    */
-  public function next_time($start_time = NULL, $limit = 366) {
+  public function nextTime($start_time = NULL, $limit = 366) {
     $start_time = isset($start_time) ? $start_time : time();
     $start_date = getdate($start_time); // Get minutes, hours, mday, wday, mon, year
-    if ($date = $this->next_date($start_date, $limit)) {
+    if ($date = $this->nextDate($start_date, $limit)) {
       return mktime($date['hours'], $date['minutes'], 0, $date['mon'], $date['mday'], $date['year']);
     }
     else {
@@ -96,13 +96,13 @@ class JobSchedulerCronTab {
    * @param $date
    *   Date array with: 'mday', 'mon', 'year', 'hours', 'minutes'
    */
-  public function next_date($date, $limit = 366) {
+  public function nextDate($date, $limit = 366) {
     $date['seconds'] = 0;
     // It is possible that the current date doesn't match
-    if ($this->check_day($date) && ($nextdate = $this->next_hour($date))) {
+    if ($this->checkDay($date) && ($nextdate = $this->nextHour($date))) {
       return $nextdate;
     }
-    elseif ($nextdate = $this->next_day($date, $limit)) {
+    elseif ($nextdate = $this->nextDay($date, $limit)) {
       return $nextdate;
     }
     else {
@@ -113,7 +113,7 @@ class JobSchedulerCronTab {
   /**
    * Check whether date's day is a valid one
    */
-  protected function check_day($date) {
+  protected function checkDay($date) {
     foreach (array('wday', 'mday', 'mon') as $key) {
       if (!in_array($date[$key], $this->cron[$key])) {
         return FALSE;
@@ -128,14 +128,14 @@ class JobSchedulerCronTab {
    * Maybe it's possible that it's within the next years, maybe no day of a year matches all conditions.
    * However, to prevent infinite loops we restrict it to the next year.
    */
-  protected function next_day($date, $limit = 366) {
+  protected function nextDay($date, $limit = 366) {
     $i = 0; // Safety check, we love infinite loops...
     while ($i++ <= $limit) {
       // This should fix values out of range, like month > 12, day > 31....
       // So we can trust we get the next valid day, can't we?
       $time = mktime(0, 0, 0, $date['mon'], $date['mday'] + 1, $date['year']);
       $date = getdate($time);
-      if ($this->check_day($date)) {
+      if ($this->checkDay($date)) {
         $date['hours'] = reset($this->cron['hours']);
         $date['minutes'] = reset($this->cron['minutes']);
         return $date;
@@ -145,7 +145,7 @@ class JobSchedulerCronTab {
   /**
    * Find the next available hour within the same day
    */
-  protected function next_hour($date) {
+  protected function nextHour($date) {
     $cron = $this->cron;
     while ($cron['hours']) {
       $hour = array_shift($cron['hours']);
@@ -166,19 +166,19 @@ class JobSchedulerCronTab {
   /**
    * Parse each text element. Recursive up to some point...
    */
-  protected static function parse_element($type, $string, $translate = FALSE) {
+  protected static function parseElement($type, $string, $translate = FALSE) {
     $string = trim($string);
     if ($translate) {
-      $string = self::translate_names($type, $string);
+      $string = self::translateNames($type, $string);
     }
     if ($string === '*') {
       // This means all possible values, return right away, no need to double check
-      return self::possible_values($type);
+      return self::possibleValues($type);
     }
     elseif (strpos($string, '/')) {
       // Multiple. Example */2, for weekday will expand into 2, 4, 6
       list($values, $multiple) = explode('/', $string);
-      $values = self::parse_element($type, $values);
+      $values = self::parseElement($type, $values);
       foreach ($values as $value) {
         if (!($value % $multiple)) {
           $range[] = $value;
@@ -190,7 +190,7 @@ class JobSchedulerCronTab {
       $list = explode(',', $string);
       $range = array();
       foreach ($list as $item) {
-        if ($values = self::parse_element($type, $item)) {
+        if ($values = self::parseElement($type, $item)) {
           $range = array_merge($range, $values);
         }
       }
@@ -208,7 +208,7 @@ class JobSchedulerCronTab {
 
     // Return unique sorted values and double check they're within possible values
     if (!empty($range)) {
-      $range = array_intersect(array_unique($range), self::possible_values($type));
+      $range = array_intersect(array_unique($range), self::possibleValues($type));
       sort($range);
       // Sunday validation. We need cron values to match PHP values, thus week day 7 is not allowed, must be 0
       if ($type == 'wday' && in_array(7, $range)) {
@@ -226,7 +226,7 @@ class JobSchedulerCronTab {
   /**
    * Get values for each type
    */
-  public static function possible_values($type) {
+  public static function possibleValues($type) {
     switch ($type) {
       case 'minutes':
         return range(0, 59);
@@ -246,7 +246,7 @@ class JobSchedulerCronTab {
   /**
    * Replace element names by values
    */
-  public static function translate_names($type, $string) {
+  public static function translateNames($type, $string) {
     switch ($type) {
       case 'wday':
         $replace = array_merge(

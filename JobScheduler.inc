@@ -81,7 +81,7 @@ class JobScheduler {
     $job['last'] = REQUEST_TIME;
     if (!empty($job['crontab'])) {
       $crontab = new JobSchedulerCronTab($job['crontab']);
-      $job['next'] = $crontab->next_time(REQUEST_TIME);
+      $job['next'] = $crontab->nextTime(REQUEST_TIME);
     }
     else {
       $job['next'] = REQUEST_TIME + $job['period'];
@@ -187,7 +187,7 @@ class JobScheduler {
     $job['scheduled'] = 0;
     if (!empty($job['crontab'])) {
       $crontab = new JobSchedulerCronTab($job['crontab']);
-      $job['next'] = $crontab->next_time($job['last']);
+      $job['next'] = $crontab->nextTime($job['last']);
     }
     else {
       $job['next'] = $job['last'] + $job['period'];

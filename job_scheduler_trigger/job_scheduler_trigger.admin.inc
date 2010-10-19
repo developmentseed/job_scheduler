@@ -154,5 +154,5 @@ function job_scheduler_trigger_edit_form_submit($form, &$form_state) {
  */
 function job_scheduler_trigger_next_time($crontab) {
   $crontab = new JobSchedulerCronTab($crontab);
-  return $crontab->cron ? $crontab->next_time(REQUEST_TIME) : 0;
+  return $crontab->cron ? $crontab->nextTime(REQUEST_TIME) : 0;
 }
