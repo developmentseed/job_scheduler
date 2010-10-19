@@ -81,7 +81,7 @@ class JobScheduler {
     $job['last'] = REQUEST_TIME;
     if (!empty($job['crontab'])) {
       $crontab = new JobSchedulerCronTab($job['crontab']);
-      $job['next'] = $crontab->next_time(REQUEST_TIME);      
+      $job['next'] = $crontab->next_time(REQUEST_TIME);
     }
     else {
       $job['next'] = REQUEST_TIME + $job['period'];
@@ -154,10 +154,10 @@ class JobScheduler {
 
   /**
    * Executes a job that
-   * 
+   *
    * @param $job
    *   A $job array as passed into set() or read from job_schedule table.
-   *   
+   *
    * @throws Exception
    *   Exceptions thrown by code called by this method are passed on.
    */
@@ -169,18 +169,18 @@ class JobScheduler {
       $this->reschedule($job);
     }
     if (function_exists($info['worker callback'])) {
-      call_user_func($info['worker callback'], $job); 
+      call_user_func($info['worker callback'], $job);
     }
     else {
       // @todo If worker doesn't exist anymore we should do something about it, remove and throw exception?
       $this->remove($job);
       throw new JobSchedulerException('Could not find worker callback function: '. $info['worker callback']);
-    }    
+    }
   }
-  
+
   /**
    * Re-schedule a job if intended to run again
-   * 
+   *
    * (If cannot determine the next time, drop the job)
    */
   public function reschedule($job) {
@@ -192,7 +192,7 @@ class JobScheduler {
     else {
       $job['next'] = $job['last'] + $job['period'];
     }
-    
+
     if ($job['next']) {
       drupal_write_record('job_schedule', $job, array('item_id'));
     }
@@ -201,7 +201,7 @@ class JobScheduler {
       $this->remove($job);
     }
   }
-  
+
   /**
    * Check whether a job exists in the queue and update its parameters if so
    */
