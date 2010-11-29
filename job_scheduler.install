@@ -148,10 +148,34 @@ function job_scheduler_update_7100() {
  * Add fields: item_id, crontab, data, expire
  */
 function job_scheduler_update_7101() {
-  $schema = drupal_get_schema('job_schedule', TRUE);
-  foreach (array('crontab', 'data', 'expire') as $field) {
-    db_add_field('job_schedule', $field, $schema['fields'][$field]);
-  }
-  $field = $schema['fields']['item_id'];
-  db_add_field('job_schedule', 'item_id', $field, array('primary key' => array('item_id')));
+  $spec = array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Crontab line in *NIX format.',
+  );
+  db_add_field('job_schedule', 'crontab', $spec);
+  $spec = array(
+    'type' => 'blob',
+    'not null' => FALSE,
+    'size' => 'big',
+    'serialize' => TRUE,
+    'description' => 'The arbitrary data for the item.',
+  );
+  db_add_field('job_schedule', 'data', $spec);
+  $spec = array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'description' => 'Timestamp when job expires.',
+  );
+  db_add_field('job_schedule', 'expire', $spec);
+  $spec = array(
+    'type' => 'serial',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'description' => 'Primary Key: Unique item ID.',
+  );
+  db_add_field('job_schedule', 'item_id', $spec, array('primary key' => array('item_id')));
 }
