@@ -60,7 +60,7 @@ function job_scheduler_cron() {
   $jobs = db_select('job_schedule', NULL, array('fetch' => PDO::FETCH_ASSOC))
             ->fields('job_schedule')
             ->condition('scheduled', 0)
-            ->condition('next', REQUEST_TIME, '<')
+            ->condition('next', REQUEST_TIME, '<=')
             ->orderBy('next', 'ASC')
             ->range(0, 200)
             ->execute();
