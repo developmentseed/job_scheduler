@@ -2,6 +2,7 @@
 name = Job Scheduler
 description = Scheduler API
 files[] = job_scheduler.module
+files[] = job_scheduler.drush.inc
 files[] = job_scheduler.install
 files[] = JobScheduler.inc
 files[] = JobSchedulerCronTab.inc
