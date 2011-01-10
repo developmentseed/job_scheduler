@@ -44,14 +44,12 @@ Remove a job.
   );
   JobScheduler::get('example_unpublish')->remove($job);
 
-Declare automatic scheduler. Automatic schedulers will have their jobs scheduled when the module is enabled.
-Periodic jobs will be rescheduled automatically.
+Optionally jobs can declared together with a schedule in a hook_cron_job_scheduler_info().
 
   function example_cron_job_scheduler_info() {
     $schedulers = array();
     $schedulers['example_unpublish'] = array(
       'worker callback' => 'example_unpublish_nodes',
-      'auto' => TRUE,
       'jobs' => array(
          array('type' => 'story', 'id' => 12, 'period' => 3600, 'periodic' => TRUE),
       )
@@ -60,14 +58,13 @@ Periodic jobs will be rescheduled automatically.
   }
 
 Jobs can have a 'crontab' instead of a period. Crontab syntax are Unix-like formatted crontab lines.
-Example of job with crontab. 
+Example of job with crontab.
 
   // This will create a job that will be triggered from monday to friday, from january to july, every two hours
   function example_cron_job_scheduler_info() {
     $schedulers = array();
     $schedulers['example_unpublish'] = array(
       'worker callback' => 'example_unpublish_nodes',
-      'auto' => TRUE,
       'jobs' => array(
          array('type' => 'story', 'id' => 12, 'crontab' => '0 */2 * january-july mon-fri', 'periodic' => TRUE),
       )
