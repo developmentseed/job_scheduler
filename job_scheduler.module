@@ -112,10 +112,8 @@ function job_scheduler_rebuild_all() {
  */
 function job_scheduler_rebuild_scheduler($name, $info = NULL) {
   $info = $info ? $info : job_scheduler_info($name);
-  if (!empty($info['auto'])) {
+  if (!empty($info['jobs'])) {
     $scheduler = JobScheduler::get($name);
-    // An 'auto' scheduler may define multiple jobs. For each of them, we need to check whether
-    // they already exist; we don't want to screw up existing timers
     foreach ($info['jobs'] as $job) {
       if (!$scheduler->check($job)) {
         $scheduler->set($job);
@@ -127,12 +125,13 @@ function job_scheduler_rebuild_scheduler($name, $info = NULL) {
 /**
  * Implementation of hook_cron_queue_info().
  *
- * Provide queue worker information for jobs marked as 'auto'
+ * Provide queue worker information for jobs declared in
+ * hook_cron_job_scheduler_info().
  */
 function job_scheduler_cron_queue_info() {
   $queue = array();
   foreach (job_scheduler_info() as $name => $info) {
-    if (!empty($info['auto']) && !empty($info['queue name'])) {
+    if (!empty($info['jobs']) && !empty($info['queue name'])) {
       $queue[$info['queue name']] = array(
         'worker callback' => 'job_scheduler_cron_queue_worker',
         'time' => 60, // Some reasonable default as we don't know
